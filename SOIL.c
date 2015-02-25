@@ -22,7 +22,7 @@
 	#include <GL/gl.h>
 #elif defined(__APPLE__) || defined(__APPLE_CC__)
 	/*	I can't test this Apple stuff!	*/
-	#include <OpenGL/gl.h>
+	#include <OpenGL/gl3.h>
 	#include <Carbon/Carbon.h>
 	#define APIENTRY
 #else
@@ -47,7 +47,7 @@ enum{
 	SOIL_CAPABILITY_NONE = 0,
 	SOIL_CAPABILITY_PRESENT = 1
 };
-static int has_cubemap_capability = SOIL_CAPABILITY_UNKNOWN;
+static int has_cubemap_capability = SOIL_CAPABILITY_PRESENT;
 int query_cubemap_capability( void );
 #define SOIL_TEXTURE_WRAP_R					0x8072
 #define SOIL_CLAMP_TO_EDGE					0x812F
@@ -55,24 +55,24 @@ int query_cubemap_capability( void );
 #define SOIL_REFLECTION_MAP					0x8512
 #define SOIL_TEXTURE_CUBE_MAP				0x8513
 #define SOIL_TEXTURE_BINDING_CUBE_MAP		0x8514
-#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_X	0x8515
-#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_X	0x8516
-#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_Y	0x8517
-#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_Y	0x8518
-#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_Z	0x8519
-#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_Z	0x851A
+#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_X        GL_TEXTURE_CUBE_MAP_POSITIVE_X
+#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_X        GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_Y        GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_Y        GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+#define SOIL_TEXTURE_CUBE_MAP_POSITIVE_Z        GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+#define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_Z        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 #define SOIL_PROXY_TEXTURE_CUBE_MAP			0x851B
 #define SOIL_MAX_CUBE_MAP_TEXTURE_SIZE		0x851C
 /*	for non-power-of-two texture	*/
-static int has_NPOT_capability = SOIL_CAPABILITY_UNKNOWN;
+//static int has_NPOT_capability = SOIL_CAPABILITY_PRESENT;
 int query_NPOT_capability( void );
 /*	for texture rectangles	*/
-static int has_tex_rectangle_capability = SOIL_CAPABILITY_UNKNOWN;
+static int has_tex_rectangle_capability = SOIL_CAPABILITY_PRESENT;
 int query_tex_rectangle_capability( void );
 #define SOIL_TEXTURE_RECTANGLE_ARB				0x84F5
 #define SOIL_MAX_RECTANGLE_TEXTURE_SIZE_ARB		0x84F8
 /*	for using DXT compression	*/
-static int has_DXT_capability = SOIL_CAPABILITY_UNKNOWN;
+static int has_DXT_capability = SOIL_CAPABILITY_PRESENT;
 int query_DXT_capability( void );
 #define SOIL_RGB_S3TC_DXT1		0x83F0
 #define SOIL_RGBA_S3TC_DXT1		0x83F1
@@ -1176,18 +1176,15 @@ unsigned int
 		/*	and what type am I using as the internal texture format?	*/
 		switch( channels )
 		{
-		case 1:
-			original_texture_format = GL_LUMINANCE;
-			break;
-		case 2:
-			original_texture_format = GL_LUMINANCE_ALPHA;
-			break;
 		case 3:
 			original_texture_format = GL_RGB;
 			break;
 		case 4:
 			original_texture_format = GL_RGBA;
 			break;
+        default:
+                original_texture_format = GL_RGB;
+                break;
 		}
 		internal_texture_format = original_texture_format;
 		/*	does the user want me to, and can I, save as DXT?	*/
@@ -1329,9 +1326,6 @@ unsigned int
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 			check_for_GL_errors( "GL_TEXTURE_MIN/MAG_FILTER" );
 		}
-		/*	does the user want clamping, or wrapping?	*/
-		if( flags & SOIL_FLAG_TEXTURE_REPEATS )
-		{
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			if( opengl_texture_type == SOIL_TEXTURE_CUBE_MAP )
@@ -1340,19 +1334,6 @@ unsigned int
 				glTexParameteri( opengl_texture_type, SOIL_TEXTURE_WRAP_R, GL_REPEAT );
 			}
 			check_for_GL_errors( "GL_TEXTURE_WRAP_*" );
-		} else
-		{
-			/*	unsigned int clamp_mode = SOIL_CLAMP_TO_EDGE;	*/
-			unsigned int clamp_mode = GL_CLAMP;
-			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_S, clamp_mode );
-			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_T, clamp_mode );
-			if( opengl_texture_type == SOIL_TEXTURE_CUBE_MAP )
-			{
-				/*	SOIL_TEXTURE_WRAP_R is invalid if cubemaps aren't supported	*/
-				glTexParameteri( opengl_texture_type, SOIL_TEXTURE_WRAP_R, clamp_mode );
-			}
-			check_for_GL_errors( "GL_TEXTURE_WRAP_*" );
-		}
 		/*	done	*/
 		result_string_pointer = "Image loaded as an OpenGL texture";
 	} else
@@ -1802,19 +1783,9 @@ unsigned int SOIL_direct_load_DDS_from_memory(
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		}
 		/*	does the user want clamping, or wrapping?	*/
-		if( flags & SOIL_FLAG_TEXTURE_REPEATS )
-		{
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_T, GL_REPEAT );
 			glTexParameteri( opengl_texture_type, SOIL_TEXTURE_WRAP_R, GL_REPEAT );
-		} else
-		{
-			/*	unsigned int clamp_mode = SOIL_CLAMP_TO_EDGE;	*/
-			unsigned int clamp_mode = GL_CLAMP;
-			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_S, clamp_mode );
-			glTexParameteri( opengl_texture_type, GL_TEXTURE_WRAP_T, clamp_mode );
-			glTexParameteri( opengl_texture_type, SOIL_TEXTURE_WRAP_R, clamp_mode );
-		}
 	}
 
 quick_exit:
@@ -1872,25 +1843,7 @@ unsigned int SOIL_direct_load_DDS(
 
 int query_NPOT_capability( void )
 {
-	/*	check for the capability	*/
-	if( has_NPOT_capability == SOIL_CAPABILITY_UNKNOWN )
-	{
-		/*	we haven't yet checked for the capability, do so	*/
-		if(
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_ARB_texture_non_power_of_two" ) )
-			)
-		{
-			/*	not there, flag the failure	*/
-			has_NPOT_capability = SOIL_CAPABILITY_NONE;
-		} else
-		{
-			/*	it's there!	*/
-			has_NPOT_capability = SOIL_CAPABILITY_PRESENT;
-		}
-	}
-	/*	let the user know if we can do non-power-of-two textures or not	*/
-	return has_NPOT_capability;
+	return SOIL_CAPABILITY_PRESENT;
 }
 
 int query_tex_rectangle_capability( void )
