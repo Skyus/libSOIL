@@ -39,6 +39,7 @@
 
 #ifndef HEADER_SIMPLE_OPENGL_IMAGE_LIBRARY
 #define HEADER_SIMPLE_OPENGL_IMAGE_LIBRARY
+#define GL_GLEXT_PROTOTYPES
 
 #ifdef __cplusplus
 extern "C" {

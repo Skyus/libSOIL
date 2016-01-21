@@ -63,6 +63,24 @@ int query_cubemap_capability( void );
 #define SOIL_TEXTURE_CUBE_MAP_NEGATIVE_Z        GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
 #define SOIL_PROXY_TEXTURE_CUBE_MAP			0x851B
 #define SOIL_MAX_CUBE_MAP_TEXTURE_SIZE		0x851C
+
+
+int queryGLext(const char *extension)
+{
+    GLuint n;
+    
+    glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+    
+    for (int i = 0; i < n; i++)
+    {
+        const GLubyte *ext = glGetStringi(GL_EXTENSIONS, i);
+        if (strcmp( (const char*)ext, extension) == 0)
+            return 1;
+    }
+    
+    return 0;
+}
+
 /*	for non-power-of-two texture	*/
 //static int has_NPOT_capability = SOIL_CAPABILITY_PRESENT;
 int query_NPOT_capability( void );
@@ -1225,7 +1243,7 @@ unsigned int
 			}
 			if( DDS_data )
 			{
-				soilGlCompressedTexImage2D(
+				glCompressedTexImage2D(
 					opengl_texture_target, 0,
 					internal_texture_format, width, height, 0,
 					DDS_size, DDS_data );
@@ -1285,7 +1303,7 @@ unsigned int
 					}
 					if( DDS_data )
 					{
-						soilGlCompressedTexImage2D(
+						glCompressedTexImage2D(
 							opengl_texture_target, MIPlevel,
 							internal_texture_format, MIPwidth, MIPheight, 0,
 							DDS_size, DDS_data );
@@ -1853,15 +1871,12 @@ int query_tex_rectangle_capability( void )
 	{
 		/*	we haven't yet checked for the capability, do so	*/
 		if(
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_ARB_texture_rectangle" ) )
+			(0 == queryGLext("GL_ARB_texture_rectangle"))
 		&&
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_EXT_texture_rectangle" ) )
+			(0 == queryGLext("GL_EXT_texture_rectangle"))
 		&&
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_NV_texture_rectangle" ) )
-			)
+			(0 == queryGLext("GL_NV_texture_rectangle"))
+        )
 		{
 			/*	not there, flag the failure	*/
 			has_tex_rectangle_capability = SOIL_CAPABILITY_NONE;
@@ -1882,12 +1897,10 @@ int query_cubemap_capability( void )
 	{
 		/*	we haven't yet checked for the capability, do so	*/
 		if(
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_ARB_texture_cube_map" ) )
+			(0 == queryGLext("GL_ARB_texture_cube_map"))
 		&&
-			(NULL == strstr( (char const*)glGetString( GL_EXTENSIONS ),
-				"GL_EXT_texture_cube_map" ) )
-			)
+			(0 == queryGLext("GL_EXT_texture_cube_map"))
+        )
 		{
 			/*	not there, flag the failure	*/
 			has_cubemap_capability = SOIL_CAPABILITY_NONE;
@@ -1907,9 +1920,7 @@ int query_DXT_capability( void )
 	if( has_DXT_capability == SOIL_CAPABILITY_UNKNOWN )
 	{
 		/*	we haven't yet checked for the capability, do so	*/
-		if( NULL == strstr(
-				(char const*)glGetString( GL_EXTENSIONS ),
-				"GL_EXT_texture_compression_s3tc" ) )
+		if(0 == queryGLext("GL_EXT_texture_cube_map"))
 		{
 			/*	not there, flag the failure	*/
 			has_DXT_capability = SOIL_CAPABILITY_NONE;
