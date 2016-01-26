@@ -65,13 +65,13 @@ int query_cubemap_capability( void );
 #define SOIL_MAX_CUBE_MAP_TEXTURE_SIZE		0x851C
 
 
-int queryGLext(const char *extension)
+bool queryGLext(const char *extension)
 {
-    GLuint n;
+    GLint n;
     
     glGetIntegerv(GL_NUM_EXTENSIONS, &n);
     
-    for (int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < n; i++)
     {
         const GLubyte *ext = glGetStringi(GL_EXTENSIONS, i);
         if (strcmp( (const char*)ext, extension) == 0)
